@@ -1,33 +1,57 @@
+<!DOCTYPE html>
 <html>
-<head>
-  <meta charset='UTF-8'/>
-  <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
-  <meta http-equiv='X-UA-Compatible' content='ie=edge'/>
-  <title>Document</title>
-  <script src='js/index.js'></script>
-  <link rel='stylesheet' href='index.css'/>
-</head>
-<body>
-  <div id='main'>
-
-    <h2>GitHub Search</h2>
-
-    <form id='github-form'>
-      <input id='search' type='text' name='search'>
-      <input type='submit' name='submit'/>
+  <head>
+    <title>Github User Search</title>
+  </head>
+  <body>
+    <form id="search-form">
+      <label for="search-input">Search Github Users:</label>
+      <input type="text" id="search-input" name="search-input" required>
+      <button type="submit">Search</button>
     </form>
+    <div id="search-results"></div>
 
-    <div id='github-container'>
-      <ul id='user-list'>
+    <script>
+      const searchForm = document.querySelector("#search-form");
+      const searchInput = document.querySelector("#search-input");
+      const searchResults = document.querySelector("#search-results");
 
-      </ul>
+      searchForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const searchQuery = searchInput.value;
+        const searchUrl = `https://api.github.com/search/users?q=${searchQuery}`;
 
-      <ul id='repos-list'>
-
-      </ul>
-    </div>
-
-  </div>
-
-</body>
+        fetch(searchUrl, {
+          headers: {
+            Accept: "application/vnd.github.v3+json",
+          },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            const users = data.items;
+            searchResults.innerHTML = "";
+            for (const user of users) {
+              const userDiv = document.createElement("div");
+              userDiv.innerHTML = `<img src="${user.avatar_url}" alt="${user.login}"><a href="${user.html_url}">${user.login}</a>`;
+              userDiv.addEventListener("click", () => {
+                const userReposUrl = `https://api.github.com/users/${user.login}/repos`;
+                fetch(userReposUrl, {
+                  headers: {
+                    Accept: "application/vnd.github.v3+json",
+                  },
+                })
+                  .then((response) => response.json())
+                  .then((data) => {
+                    const repos = data;
+                    userDiv.innerHTML += `<ul>${repos
+                      .map((repo) => `<li>${repo.name}</li>`)
+                      .join("")}</ul>`;
+                  });
+              });
+              searchResults.appendChild(userDiv);
+            }
+          });
+      });
+    </script>
+  </body>
 </html>
